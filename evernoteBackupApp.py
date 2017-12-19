@@ -56,7 +56,7 @@ for n in notes_metadata_list.notes:
 	##This way we dont get endless copies for one file that isnt changed
 	##Instead it is overwritten each time. Time intensive but I dont have to
 	##look up if file exists
-	string = "ever_{0}_{1}_{2}{3}{4}.xml".format(
+	string = "evernoteBackup_{0}_{1}_{2}{3}{4}.xml".format(
 									notebook_name,
 									note.title, 
 									check.year,
