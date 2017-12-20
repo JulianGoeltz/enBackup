@@ -1,46 +1,60 @@
 #!/usr/bin/env python2
 # encoding: utf-8
 
+#######################################
+###################Documentation
+# Simple script using the Evernote API from 
+# http://dev.evernote.com/doc/start/python.php
+# to log in to Evernote and retrieve all notes from all notebooks.
+# They are saved in the folder FOLDER with a format
+# evernoteBackup_<notebookName>_<NoteTitle>_<YYYYMMDD>.xml
+# The date is taken from Evernote, apparently not unique and correct, but set by the app.
+# To be clear, this means the date could be wrong.
+# Files are in the ENML described here:
+# https://dev.evernote.com/doc/articles/enml.php
+# Create LOGIN_TOKEN here https://www.evernote.com/api/DeveloperToken.action
 
-from evernote.api.client import *#EvernoteClient
+
+# Possible Problems:
+# 	only 250 items can be returned by search
+#######################################
+###################Config
+FOLDER = "./"
+LOGIN_TOKEN = "S=s1:U=94427:E=167c7309ea0:C=1606f7f7058:P=1cd:A=en-devtoken:V=2:H=28390e30fe2320abb279693ca0aa85d8"
+SANDBOX = False
+#######################################
+from evernote.api.client import *
 from pprint import pprint
 import datetime
-# import time
 import os.path
+from os import mkdir
 
-dev_token = "S=s1:U=94427:E=167c7309ea0:C=1606f7f7058:P=1cd:A=en-devtoken:V=2:H=28390e30fe2320abb279693ca0aa85d8"
-client = EvernoteClient(token=dev_token)
-userStore = client.get_user_store()
-user = userStore.getUser()
+# From Django, after motivation from https://stackoverflow.com/questions/295135/turn-a-string-into-a-valid-filename
+# (gets strings, so no unicode neccessary)
+def slugify(value):
+    """
+    Normalizes string, converts to lowercase, removes non-alpha characters,
+    and converts spaces to hyphens.
+    """
+    value = (re.sub('[^\w\s-]', '', value).strip().lower())
+    value = (re.sub('[-\s]+', '-', value))
+    return value
 
-
-
+client = EvernoteClient(token=LOGIN_TOKEN)
+user_store = client.get_user_store()
+# user = userStore.getUser()
 note_store = client.get_note_store()
-
-notebooks = note_store.listNotebooks()
-for n in notebooks:
-	print(n.guid)
+# notebooks = note_store.listNotebooks()
+# for n in notebooks:
+# 	print(n.guid)
 
 note_filter = NoteStore.NoteFilter()
 note_filter.words = 'intitle:""'
 notes_metadata_result_spec = NoteStore.NotesMetadataResultSpec(includeTitle=True, includeNotebookGuid=True)
-
 notes_metadata_list = note_store.findNotesMetadata(note_filter, 0, 250, notes_metadata_result_spec)
-# print(notes_metadata_list.notes)
-note_guid = notes_metadata_list.notes[0].guid
-notebook_guid = notes_metadata_list.notes[0].notebookGuid
-# print(notebook_guid)
-# print(notes_metadata_list)
-print(note_store.getNotebook(notebook_guid).name)
-note = note_store.getNote(note_guid, True, False, False, False)
-# pprint(vars(note))
-# pprint(vars(notes_metadata_list.notes[0]))
-
-# # exit()
-# import time
-
-
-today = datetime.date.today()
+print("   Got list of {0} notes, now iterating through".format(notes_metadata_list.totalNotes))
+if(not os.path.isdir(FOLDER)):
+	os.mkdir(FOLDER)
 for n in notes_metadata_list.notes:
 	note_guid = n.guid
 	notebook_guid = n.notebookGuid
@@ -57,20 +71,15 @@ for n in notes_metadata_list.notes:
 	##Instead it is overwritten each time. Time intensive but I dont have to
 	##look up if file exists
 	string = "evernoteBackup_{0}_{1}_{2}{3}{4}.xml".format(
-									notebook_name,
-									note.title, 
+									slugify(notebook_name),
+									slugify(note.title), 
 									check.year,
 									check.month,
 									check.day)
-	if(os.path.isfile(string)): 
+	if(os.path.isfile(FOLDER+string)): 
 		print("File {0} already exists in latest form".format(string))
-		continue
-
-	file = open(string, "w")
-	file.write(note.content)
-	file.close()
-
-	print("Written note to file {0}".format(string))
-
-# pprint(notes_metadata_list)
-
+	else:
+		file = open(os.path.join(FOLDER, string), "w")
+		file.write(note.content)
+		file.close()
+		print("Written note to file {0}".format(string))
