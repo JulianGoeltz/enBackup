@@ -29,13 +29,10 @@ import datetime
 import os.path
 from os import mkdir
 
-# From Django, after motivation from https://stackoverflow.com/questions/295135/turn-a-string-into-a-valid-filename
+# inspired by Django, after motivation from https://stackoverflow.com/questions/295135/turn-a-string-into-a-valid-filename
 # (gets strings, so no unicode neccessary)
-def slugify(value):
-    """
-    Normalizes string, converts to lowercase, removes non-alpha characters,
-    and converts spaces to hyphens.
-    """
+def norm(value):
+    #remove special chars, change whitepsaces, lowercase
     value = (re.sub('[^\w\s-]', '', value).strip().lower())
     value = (re.sub('[-\s]+', '-', value))
     return value
@@ -71,8 +68,8 @@ for n in notes_metadata_list.notes:
 	##Instead it is overwritten each time. Time intensive but I dont have to
 	##look up if file exists
 	string = "evernoteBackup_{0}_{1}_{2}{3}{4}.xml".format(
-									slugify(notebook_name),
-									slugify(note.title), 
+									norm(notebook_name),
+									norm(note.title), 
 									check.year,
 									check.month,
 									check.day)
